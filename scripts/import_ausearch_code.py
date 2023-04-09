@@ -7,9 +7,7 @@ def es_create_index_if_not_exists(es, index):
     try:
         es.indices.create(index=index)
     except elasticsearch.exceptions.RequestError as ex:
-        if ex.error == 'resource_already_exists_exception':
-            pass # Index already exists. Ignore.
-        else: # Other exception - raise it
+        if ex.error != 'resource_already_exists_exception':
             raise ex
 
 def insert_code():
