@@ -16,58 +16,53 @@ def es_create_index_if_not_exists(es, index):
     try:
         es.indices.create(index)
     except elasticsearch.exceptions.RequestError as ex:
-        if ex.error == 'resource_already_exists_exception':
-            pass # Index already exists. Ignore.
-        else: # Other exception - raise it
+        if ex.error != 'resource_already_exists_exception':
             raise ex
 
 def filter_apis(name):
-  query = {
-    "query": {
-      "bool": {
-        "must": []
+    query = {
+      "query": {
+        "bool": {
+          "must": []
+        }
       }
     }
-  }
-  headers={
-    "Content-Type": "application/json"
-  }
+    headers={
+      "Content-Type": "application/json"
+    }
 
-  if name:
-    query["query"]["bool"]["must"].append({
-      "match": {
-        "name": name
-      }
+    if name:
+      query["query"]["bool"]["must"].append({
+        "match": {
+          "name": name
+        }
+      })
+
+    res = es.search(index="stackoverflow", body=query, headers={
+      "Content-Type": "application/json"
     })
+    all_res = {"stackoverflow": res["hits"]["hits"]}
+    res = es.search(index="github", body=query, headers={
+      "Content-Type": "application/json"
+    })
+    all_res["github"] = res["hits"]["hits"]
 
-  all_res = {}
+    res = es.search(index="tweet", body=query, headers={
+      "Content-Type": "application/json"
+    })
+    all_res["tweet"] = res["hits"]["hits"]
 
-  res = es.search(index="stackoverflow", body=query, headers={
-    "Content-Type": "application/json"
-  })
-  all_res["stackoverflow"] = res["hits"]["hits"]
+    res = es.search(index="cve", body=query, headers={
+      "Content-Type": "application/json"
+    })
+    all_res["cve"] = res["hits"]["hits"]
 
-  res = es.search(index="github", body=query, headers={
-    "Content-Type": "application/json"
-  })
-  all_res["github"] = res["hits"]["hits"]
+    # res = es.search(index="youtube", body=query, headers={
+    #   "Content-Type": "application/json"
+    # })
+    # all_res["youtube"] = res["hits"]["hits"]
 
-  res = es.search(index="tweet", body=query, headers={
-    "Content-Type": "application/json"
-  })
-  all_res["tweet"] = res["hits"]["hits"]
-
-  res = es.search(index="cve", body=query, headers={
-    "Content-Type": "application/json"
-  })
-  all_res["cve"] = res["hits"]["hits"]
-
-  # res = es.search(index="youtube", body=query, headers={
-  #   "Content-Type": "application/json"
-  # })
-  # all_res["youtube"] = res["hits"]["hits"]
-
-  return all_res
+    return all_res
 
 @app.route("/search", methods=["GET"])
 def search():
